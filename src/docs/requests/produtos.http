@@ -1,0 +1,30 @@
+### Listar Produtos
+GET http://localhost:8080/api/v1/produtos
+
+### Buscar Produto por id
+GET http://localhost:8080/api/v1/produtos/1
+
+### Criar Produto
+POST http://localhost:8080/api/v1/produtos
+Content-Type: application/json
+
+{
+  "nome": "Pizza de Mussarela",
+  "descricao": "Pizza com queijo e molho de tomate",
+  "valorVenda": 65.90,
+  "codStatus": true
+}
+
+### Atualizar Produto
+PUT http://localhost:8080/api/v1/produtos/1
+Content-Type: application/json
+
+{
+  "nome": "Pizza Calabresa Especial",
+  "descricao": "Calabresa, cebola, catupiry e molho de tomate",
+  "valorVenda": 59.90,
+  "codStatus": true
+}
+
+### Excluir Produto
+DELETE http://localhost:8080/api/v1/produtos/2

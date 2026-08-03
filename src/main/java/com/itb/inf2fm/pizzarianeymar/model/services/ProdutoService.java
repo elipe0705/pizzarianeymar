@@ -1,41 +1,60 @@
- static {
+package com.itb.inf2fm.pizzarianeymar.model.services;
 
-        Produto p1 = new Produto();
-        p1.setId(1L);
-        p1.setNome("Pizza Calabresa");
-        p1.setPreco(45.90);
+import com.itb.inf2fm.pizzarianeymar.model.entity.Produto;
+import org.springframework.stereotype.Service;
 
-        Produto p2 = new Produto();
-        p2.setId(2L);
-        p2.setNome("Pizza Portuguesa");
-        p2.setPreco(52.90);
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
-        PRODUTOS.add(p1);
-        PRODUTOS.add(p2);
+/**
+ * Camada Service do Produto.
+ * Guarda os produtos em memoria (ainda sem banco de dados).
+ */
+@Service
+public class ProdutoService {
+
+    private final List<Produto> produtos = Collections.synchronizedList(new ArrayList<>());
+
+    /** Gerador do proximo id. Comeca no 2 porque ja existem 2 produtos de exemplo. */
+    private final AtomicLong sequencia = new AtomicLong(2);
+
+    public ProdutoService() {
+        produtos.add(criarProduto(1L, "Pizza Calabresa", "Calabresa, cebola e molho de tomate",
+                new BigDecimal("45.90")));
+        produtos.add(criarProduto(2L, "Pizza Portuguesa", "Presunto, ovo, cebola e azeitona",
+                new BigDecimal("52.90")));
     }
 
     // CREATE
     public Produto salvar(Produto produto) {
 
-        Long novoId = gerarNovoId();
-        produto.setId(novoId);
+        // o id sempre e gerado aqui, nunca vem do cliente
+        produto.setId(sequencia.incrementAndGet());
 
-        PRODUTOS.add(produto);
+        produtos.add(produto);
 
         return produto;
     }
 
     // READ - listar todos
     public List<Produto> listarTodos() {
-        return PRODUTOS;
+        // copia defensiva: quem chamar nao consegue alterar a lista interna
+        return new ArrayList<>(produtos);
     }
 
     // READ - buscar por id
     public Produto buscarPorId(Long id) {
 
-        for (Produto produto : PRODUTOS) {
+        if (id == null) {
+            return null;
+        }
 
-            if (produto.getId().equals(id)) {
+        for (Produto produto : produtos) {
+
+            if (id.equals(produto.getId1())) {
                 return produto;
             }
         }
@@ -48,15 +67,16 @@
 
         Produto produto = buscarPorId(id);
 
-        if (produto != null) {
-
-            produto.setNome(produtoAtualizado.getNome());
-            produto.setPreco(produtoAtualizado.getPreco());
-
-            return produto;
+        if (produto == null) {
+            return null;
         }
 
-        return null;
+        produto.setNome(produtoAtualizado.getNome());
+        produto.setDescricao(produtoAtualizado.getDescricao());
+        produto.setValorVenda1(produtoAtualizado.getValorVenda());
+        produto.setCodStatus(produtoAtualizado.isCodStatus());
+
+        return produto;
     }
 
     // DELETE
@@ -64,25 +84,24 @@
 
         Produto produto = buscarPorId(id);
 
-        if (produto != null) {
-            PRODUTOS.remove(produto);
-            return true;
+        if (produto == null) {
+            return false;
         }
 
-        return false;
+        produtos.remove(produto);
+
+        return true;
     }
 
-    // Gera ID automático
-    private Long gerarNovoId() {
+    private Produto criarProduto(Long id, String nome, String descricao, BigDecimal valorVenda) {
 
-        Long maiorId = 0L;
+        Produto produto = new Produto();
+        produto.setId(id);
+        produto.setNome(nome);
+        produto.setDescricao(descricao);
+        produto.setValorVenda1(valorVenda);
+        produto.setCodStatus(true);
 
-        for (Produto produto : PRODUTOS) {
-
-            if (produto.getId() > maiorId) {
-                maiorId = produto.getId();
-            }
-        }
-
-        return maiorId + 1;
+        return produto;
     }
+}
