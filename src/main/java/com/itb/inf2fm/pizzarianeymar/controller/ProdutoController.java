@@ -1,8 +1,9 @@
 package com.itb.inf2fm.pizzarianeymar.controller;
 
-import java.net.URI;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,137 +13,127 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.itb.inf2fm.pizzarianeymar.model.entity.Produto;
-import com.itb.inf2fm.pizzarianeymar.model.services.ProdutoService;
+import com.itb.inf2fm.pizzarianeymar.model.services.ProdutoServices;
 
-/**
- * Camada Controller do Produto.
- * Recebe as requisicoes HTTP, chama o Service e devolve a resposta.
- *
- * @RestController  -> diz ao Spring que esta classe e um controller REST
- *                     (todo retorno de metodo ja vira JSON no corpo da resposta).
- * @RequestMapping  -> define a URL base de todos os metodos desta classe.
- */
+
+// ANOTAÇÕES PARA A CLASSE  dependência necessária -> spring-boot-starter-webmvc
+
+// @Controller:     Sistema Web ( Sites em geral ) - Back-End + Front-End
+// @RestController: Api  - Apenas Back-End
+
+// ANOTAÇÕES PARA MÉTODOS dependência necessária -> spring-boot-starter-webmvc
+
+// @GetMapping: Utilizado para "buscar" dados na API (Somente pesquisa)
+// @PostMapping: Utilizado para "enviar" dados para API 
+// @PutMapping: Utilizando para "atualizar" todos os dados na API
+// @DeleteMapping: Utilizado para "excluir" dados na API
+// @PatchMapping: Utilizado para "atualizar parcialmente" dados na API, exemplo mudar o status de um produto 
+
+// ResponseEntity: Controla a resposta HTTP completa de uma API, permitindo definir o corpo (body), o código de status (200, 201, 400 etc)
+//                 e os cabeçalhos (headers)
+
+
 @RestController
 @RequestMapping("/api/v1/produtos")
 public class ProdutoController {
 
-    /**
-     * @Autowired -> o Spring injeta automaticamente uma instancia de ProdutoService.
-     * Nao precisamos dar "new ProdutoService()".
-     */
-    private final ProdutoService produtoService;
+    // Ligando meu controlador com o respectivo serviço
+    @Autowired
+    private ProdutoServices produtoServices;
 
-    ProdutoController(ProdutoService produtoService) {
-        this.produtoService = produtoService;
-    }
-
-    // ==================== CREATE ====================
-
-    /**
-     * Cadastra um novo produto.
-     *
-     * @PostMapping  -> responde ao metodo HTTP POST em /produtos
-     * @RequestBody  -> converte o JSON enviado pelo cliente em um objeto Produto
-     *
-     * Retorno: 201 Created + o produto salvo (ja com o id gerado) e o
-     * cabecalho Location apontando para /api/v1/produtos/{id}.
-     */
-    @PostMapping
-    public ResponseEntity<Produto> salvar(@RequestBody Produto produto) {
-
-        Produto produtoSalvo = produtoService.salvar(produto);
-
-        URI localizacao = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(produtoSalvo.getId1())
-                .toUri();
-
-        return ResponseEntity.created(localizacao).body(produtoSalvo);
-    }
-
-    // ==================== READ ====================
-
-    /**
-     * Lista todos os produtos cadastrados.
-     *
-     * @GetMapping -> responde ao metodo HTTP GET em /produtos
-     *
-     * Retorno: 200 OK + a lista de produtos.
-     */
     @GetMapping
-    public ResponseEntity<List<Produto>> listarTodos() {
-
-        List<Produto> produtos = produtoService.listarTodos();
-
-        return ResponseEntity.ok(produtos);
+    public ResponseEntity<List<Produto>> listarTodosProdutos() {
+        return ResponseEntity.ok().body(produtoServices.listarTodos());
     }
 
-    /**
-     * Busca um produto pelo id.
-     *
-     * @GetMapping("/{id}") -> responde ao GET em /produtos/1, /produtos/2 ...
-     * @PathVariable        -> pega o valor que veio na URL e joga no parametro "id"
-     *
-     * Retorno: 200 OK + produto, ou 404 Not Found se nao existir.
-     */
+    // Pesquisar produto por ID
+    // Ultilize o "?" ou "object" quando o retorno  pode ser objetos diferentes (produto responseentity)
+
     @GetMapping("/{id}")
-    public ResponseEntity<Produto> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<Object> buscarProdutoPorId(@PathVariable String id) {
+        try {
+            Long idLong = Long.parseLong(id);
+            Produto produto = produtoServices.buscarPorId(idLong);
 
-        Produto produto = produtoService.buscarPorId(id);
+            if (produto == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Produto com o id " + id + " não encontrado.");
+            }
 
-        // Produto nao encontrado na lista
-        if (produto == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(produto);
+
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Id " + id + " inválido, utilize um valor numérico.");
         }
-
-        return ResponseEntity.ok(produto);
     }
 
-    // ==================== UPDATE ====================
+    @PostMapping
+    public ResponseEntity<Object> salvarProduto(@RequestBody Produto produto) {
+        try {
+            Produto produtoSalvo = produtoServices.salvar(produto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(produtoSalvo);
 
-    /**
-     * Atualiza os dados de um produto ja existente.
-     *
-     * @PutMapping("/{id}") -> responde ao metodo HTTP PUT em /produtos/{id}
-     * @PathVariable        -> id do produto que sera alterado
-     * @RequestBody         -> novos dados do produto (em JSON)
-     *
-     * Retorno: 200 OK + produto atualizado, ou 404 Not Found se nao existir.
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<Produto> atualizar(@PathVariable Long id, @RequestBody Produto produto) {
-
-        Produto produtoAtualizado = produtoService.atualizar(id, produto);
-
-        if (produtoAtualizado == null) {
-            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-
-        return ResponseEntity.ok(produtoAtualizado);
     }
 
-    // ==================== DELETE ====================
+    // Excluir o produto por ID
 
-    /**
-     * Exclui um produto pelo id.
-     *
-     * @DeleteMapping("/{id}") -> responde ao metodo HTTP DELETE em /produtos/{id}
-     * @PathVariable           -> id do produto que sera excluido
-     *
-     * Retorno: 204 No Content quando excluir, ou 404 Not Found se nao existir.
-     */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+    public ResponseEntity<Object> excluirProdutoPorId(@PathVariable String id) {
+        try {
+            Long idLong = Long.parseLong(id);
+            Produto produtoBanco = produtoServices.buscarPorId(idLong);
 
-        boolean excluido = produtoService.excluir(id);
+            if (produtoBanco == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Produto com o id " + id + " não encontrado.");
+            }
 
-        if (!excluido) {
-            return ResponseEntity.notFound().build();
+            boolean excluido = produtoServices.excluir(idLong);
+
+            if (excluido) {
+                return ResponseEntity.ok("Produto com o id " + id + " excluído com sucesso.");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Erro ao excluir o produto com o id " + id);
+            }
+
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Id " + id + " inválido, utilize um valor numérico.");
         }
+    }
 
-        return ResponseEntity.noContent().build();
+    // Atualizar produto
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Object> atualizarProduto(@PathVariable String id, @RequestBody Produto produtoAtualizado) {
+        try {
+            Long idLong = Long.parseLong(id);
+            Produto produtoBanco = produtoServices.buscarPorId(idLong);
+
+            if (produtoBanco == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Produto com o id " + id + " não encontrado.");
+            }
+
+            Produto produtoAtualizadoBanco = produtoServices.atualizar(idLong, produtoAtualizado);
+
+            if (produtoAtualizadoBanco != null) {
+                return ResponseEntity.ok(produtoAtualizadoBanco);
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Erro ao atualizar o produto com o id " + id);
+            }
+
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Id " + id + " inválido, utilize um valor numérico.");
+        }
     }
 }
