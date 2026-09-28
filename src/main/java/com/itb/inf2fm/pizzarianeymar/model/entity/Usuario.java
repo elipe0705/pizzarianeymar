@@ -1,22 +1,52 @@
 package com.itb.inf2fm.pizzarianeymar.model.entity;
 
 import com.itb.inf2fm.pizzarianeymar.model.enums.TipoUsuario;
+import jakarta.persistence.*;
 
+@Entity
+@Table(name = "Usuario")
 public class Usuario {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(length = 100, nullable = false)
     private String nome;
+
+    @Column(length = 15, nullable = true)
     private String cpf;
+
+    @Column(length = 45, nullable = false)
     private String email;
+
+    @Column(length = 255, nullable = false)
     private String senha;
-    private String sexo;
-    private String logradouro;
-    private String cep;
-    private String bairro;
-    private String cidade;
-    private String uf;
-    private boolean codStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 45, nullable = false)
     private TipoUsuario tipoUsuario;
+
+    @Column(length = 20, nullable = true)
+    private String sexo;
+
+    @Column(length = 100, nullable = true)
+    private String logradouro;
+
+    @Column(length = 10, nullable = true)
+    private String cep;
+
+    @Column(length = 45, nullable = true)
+    private String bairro;
+
+    @Column(length = 45, nullable = true)
+    private String cidade;
+
+    @Column(length = 2, nullable = true)
+    private String uf;
+
+    @Column(nullable = false)
+    private boolean codStatus;
 
     public Long getId() {
         return id;
@@ -56,6 +86,14 @@ public class Usuario {
 
     public void setSenha(String senha) {
         this.senha = senha;
+    }
+
+    public TipoUsuario getTipoUsuario() {
+        return tipoUsuario;
+    }
+
+    public void setTipoUsuario(TipoUsuario tipoUsuario) {
+        this.tipoUsuario = tipoUsuario;
     }
 
     public String getSexo() {
@@ -112,13 +150,5 @@ public class Usuario {
 
     public void setCodStatus(boolean codStatus) {
         this.codStatus = codStatus;
-    }
-
-    public TipoUsuario getTipoUsuario() {
-        return tipoUsuario;
-    }
-
-    public void setTipoUsuario(TipoUsuario tipoUsuario) {
-        this.tipoUsuario = tipoUsuario;
     }
 }

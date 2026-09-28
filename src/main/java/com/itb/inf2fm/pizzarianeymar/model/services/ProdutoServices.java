@@ -14,29 +14,26 @@ public class ProdutoServices {
     private ProdutoRepository produtoRepository;
 
     // Método responsável em listar todos os produtos cadastrados no banco de dados
-    public List<Produto> listarTodos() {
+    public List<Produto> findAll() {
         return produtoRepository.findAll();
     }
 
     // Método responsável em criar o produto no banco de dados
-    public Produto salvar(Produto produto) {
+    public Produto save(Produto produto) {
         produto.setId(null); // o id é gerado pelo banco (IDENTITY), nunca vem do cliente
         produto.setCodStatus(true);
         return produtoRepository.save(produto);
     }
 
-    // Método responsável em listar o produto por ID (retorna null se não existir)
-    public Produto buscarPorId(Long id) {
-        return produtoRepository.findById(id).orElse(null);
+    // Método responsável em listar o produto por ID
+    public Produto findById(Long id) {
+        return produtoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado com o id " + id));
     }
 
     // Método responsável em atualizar o produto
-    public Produto atualizar(Long id, Produto produto) {
-        Produto produtoExistente = buscarPorId(id);
-
-        if (produtoExistente == null) {
-            return null;
-        }
+    public Produto update(Long id, Produto produto) {
+        Produto produtoExistente = findById(id);
 
         produtoExistente.setNome(produto.getNome());
         produtoExistente.setDescricao(produto.getDescricao());
@@ -49,14 +46,8 @@ public class ProdutoServices {
     }
 
     // Método responsável em excluir o produto (exclusão física)
-    public boolean excluir(Long id) {
-        Produto produtoExistente = buscarPorId(id);
-
-        if (produtoExistente == null) {
-            return false;
-        }
-
+    public void delete(Long id) {
+        Produto produtoExistente = findById(id);
         produtoRepository.delete(produtoExistente);
-        return true;
     }
 }
